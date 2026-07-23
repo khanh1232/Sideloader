@@ -1,0 +1,79 @@
+name: Build Sideloader for Android (Multi-Arch)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch_name: "32-bit (ARMv7)"
+            dub_arch: "armv7-linux-android"
+            conf_target: "armv7.*-android.*"
+            clang_bin: "armv7a-linux-androideabi30-clang"
+            artifact_name: "sideloader-android-armv7-32bit"
+
+          - arch_name: "64-bit (ARM64)"
+            dub_arch: "aarch64-linux-android"
+            conf_target: "aarch64-.*-android.*"
+            clang_bin: "aarch64-linux-android30-clang"
+            artifact_name: "sideloader-android-arm64"
+
+    name: Build ${{ matrix.arch_name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      # 1. Cài đặt D Compiler (LDC) và DUB
+      - name: Setup D Language Toolchain
+        uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: ldc-latest
+
+      # 2. Cài đặt Android NDK
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26b
+
+      # 3. Cài các dependency C cần thiết
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
+
+      # 4. Cấu hình LDC Cross-Compiler linh hoạt theo Matrix
+      - name: Configure LDC Cross-Compiler
+        run: |
+          TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin
+          mkdir -p ~/.dlang
+          cat <<EOF > ~/.dlang/ldc2.conf
+          "${{ matrix.conf_target }}":
+          {
+              switches = [
+                  "-defaultlib=phobos2-ldc,druntime-ldc",
+                  "-gcc=$TOOLCHAIN/${{ matrix.clang_bin }}"
+              ];
+          };
+          EOF
+
+      # 5. Build Binary bằng DUB (Đã bỏ --config=cli)
+      - name: Build Binary with DUB
+        run: |
+          dub build --compiler=ldc2 --arch=${{ matrix.dub_arch }} --build=release
+
+      # 6. Upload file binary xuất ra Artifacts
+      - name: Upload Sideloader Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: bin/ # Kéo toàn bộ file xuất ra trong thư mục bin
