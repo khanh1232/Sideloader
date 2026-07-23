@@ -39,13 +39,13 @@ jobs:
         with:
           compiler: ldc-latest
 
-      # 2. Cài đặt Android NDK
+      # 2. Cài đặt Android NDK (Dùng NDK r26b chuẩn)
       - name: Setup Android NDK
-        uses: nsetup/setup-ndk@v2
+        uses: nttld/setup-ndk@v1
         with:
           ndk-version: r26b
 
-      # 3. Cài các dependency C
+      # 3. Cài các dependency C cần thiết
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
@@ -71,9 +71,10 @@ jobs:
         run: |
           dub build --compiler=ldc2 --arch=${{ matrix.dub_arch }} --config=cli --build=release
 
-      # 6. Upload file binary xuất ra
+      # 6. Upload file binary xuất ra Artifacts
       - name: Upload Sideloader Binary
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: bin/sideloader
+
