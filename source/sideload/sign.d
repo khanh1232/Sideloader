@@ -380,3 +380,7 @@ class InvalidApplicationException: Exception {
         super(format!"Cannot sign the application : %s"(message));
     }
 }
+// Fix lỗi thiếu symbol Objective-C runtime của LDC compiler trên Android 32-bit
+extern (C) void* objc_opt_isKindOfClass(void* obj, void* cls) {
+    return null;
+}
