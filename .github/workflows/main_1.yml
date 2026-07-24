@@ -1,0 +1,55 @@
+name: CLI builds
+
+on: push
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Bản ARM 32-bit (armv7a)
+          - triple: 'armv7a-linux-androideabi' # Hoặc 'armv7-linux-gnueabihf' tùy theo setup-d-compiler của dự án
+            target: 'armv7a'
+
+          # Bản ARM 64-bit (arm64 / aarch64)
+          - triple: 'aarch64-linux-android' # Hoặc 'aarch64-linux-gnu'
+            target: 'arm64'
+
+    name: Build CLI for ${{ matrix.triple }}
+
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Update APT repos
+        run: sudo apt-get update
+
+      - name: Set-up D compiler
+        uses: ./.github/actions/setup-d-compiler
+        with:
+          target-triple: ${{ matrix.triple }}
+
+      - name: Write version file
+        uses: ./.github/actions/write-version-file
+
+      # Thêm cờ --force để bắt DUB biên dịch từ đầu, không dính cache rác
+      - name: Build
+        run: dub build --force -b release-debug --compiler=ldc2 --arch ${{ matrix.triple }} :cli-frontend
+
+      - name: Move files around for artifacting
+        uses: ./.github/actions/rename-files
+        with:
+          build-tag: cli-${{ matrix.triple }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sideloader-cli-${{ matrix.target }}
+          path: |
+            ${{ github.workspace }}/bin/*
