@@ -70,10 +70,12 @@ jobs:
       - name: Build Binary with DUB
         run: |
           dub build --compiler=ldc2 --arch=${{ matrix.dub_arch }} --build=release --force
+      b khu gvy ik#
+      - name: Upload Output Binary
+  uses: actions/upload-artifact@v4
+  with:
+    name: built-binary
+    path: |
+      ./sideloader-32bit
+      ./sideloader-64bit
 
-      # 6. Upload file binary xuất ra Artifacts
-      - name: Upload Sideloader Binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: bin/ # Kéo toàn bộ file xuất ra trong thư mục bin
