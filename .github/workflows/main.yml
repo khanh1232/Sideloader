@@ -69,7 +69,7 @@ jobs:
       # 5. Build Binary bằng DUB (Đã bỏ --config=cli)
       - name: Build Binary with DUB
         run: |
-          dub build --compiler=ldc2 --arch=${{ matrix.dub_arch }} --build=release
+          dub build --compiler=ldc2 --arch=${{ matrix.dub_arch }} --build=release --force
 
       # 6. Upload file binary xuất ra Artifacts
       - name: Upload Sideloader Binary
